@@ -1,3 +1,5 @@
+import random
+
 import torch
 from absl import flags
 from torch import nn
@@ -43,7 +45,7 @@ class Main:
         self.create_dataloader()
         self.create_model_instance()
         self.create_loss_and_optimizers()
-        self.start()
+        # self.start()
         self.load_and_try()
 
     def download_fashion_mnist(self):
@@ -159,9 +161,18 @@ class Main:
         ]
 
         model.eval()
-        x, y = self.test_data[0][0], self.test_data[0][1]
-        with torch.no_grad():
-            x = x.to(DEVICE)
-            pred = model(x)
-            predicted, actual = classes[pred[0].argmax(0)], classes[y]
-            print(f'Predicted: "{predicted}", Actual: "{actual}"')
+        score = 0
+        cycles = 1000
+        for _ in range(cycles):
+            i = random.randint(0, 1000)
+            x, y = self.test_data[i][0], self.test_data[i][1]
+            with torch.no_grad():
+                x = x.to(DEVICE)
+                pred = model(x)
+                predicted, actual = classes[pred[0].argmax(0)], classes[y]
+                # print(f'Predicted: "{predicted}", Actual: "{actual}"')
+
+                if predicted == actual:
+                    score += 1
+
+        print(f"Scored {round(score/cycles*100, 2)}%!")
