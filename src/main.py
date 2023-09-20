@@ -44,6 +44,7 @@ class Main:
         self.create_model_instance()
         self.create_loss_and_optimizers()
         self.start()
+        self.load_and_try()
 
     def download_fashion_mnist(self):
         # Download training data from open datasets.
@@ -127,6 +128,40 @@ class Main:
         print(
             f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n"
         )
+        print()
 
     def start(self):
-        ...
+        for t in range(FLAGS.model.epochs):
+            print(f"Epoch {t+1}\n-------------------------------")
+            self.train(self.train_dataloader, self.model, self.loss_fn, self.optimizer)
+            self.test(self.test_dataloader, self.model, self.loss_fn)
+        print("Done!")
+        print()
+
+        torch.save(self.model.state_dict(), "model.pth")
+        print("Saved PyTorch Model State to model.pth")
+
+    def load_and_try(self):
+        model = NeuralNetwork().to(DEVICE)
+        model.load_state_dict(torch.load("model.pth"))
+
+        classes = [
+            "T-shirt/top",
+            "Trouser",
+            "Pullover",
+            "Dress",
+            "Coat",
+            "Sandal",
+            "Shirt",
+            "Sneaker",
+            "Bag",
+            "Ankle boot",
+        ]
+
+        model.eval()
+        x, y = self.test_data[0][0], self.test_data[0][1]
+        with torch.no_grad():
+            x = x.to(DEVICE)
+            pred = model(x)
+            predicted, actual = classes[pred[0].argmax(0)], classes[y]
+            print(f'Predicted: "{predicted}", Actual: "{actual}"')
