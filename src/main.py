@@ -42,6 +42,7 @@ class Main:
         self.download_fashion_mnist()
         self.create_dataloader()
         self.create_model_instance()
+        self.create_loss_and_optimizers()
         self.start()
 
     def download_fashion_mnist(self):
@@ -86,6 +87,46 @@ class Main:
         self.model = NeuralNetwork().to(DEVICE)
         print(self.model)
         print()
+
+    def create_loss_and_optimizers(self):
+        self.loss_fn = nn.CrossEntropyLoss()
+        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-3)
+
+    def train(self, dataloader, model, loss_fn, optimizer):
+        size = len(dataloader.dataset)
+        model.train()
+        for batch, (X, y) in enumerate(dataloader):
+            X, y = X.to(DEVICE), y.to(DEVICE)
+
+            # Compute prediction error
+            pred = model(X)
+            loss = loss_fn(pred, y)
+
+            # Backpropagation
+            loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
+
+            if batch % 100 == 0:
+                loss, current = loss.item(), (batch + 1) * len(X)
+                print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+
+    def test(self, dataloader, model, loss_fn):
+        size = len(dataloader.dataset)
+        num_batches = len(dataloader)
+        model.eval()
+        test_loss, correct = 0, 0
+        with torch.no_grad():
+            for X, y in dataloader:
+                X, y = X.to(DEVICE), y.to(DEVICE)
+                pred = model(X)
+                test_loss += loss_fn(pred, y).item()
+                correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+        test_loss /= num_batches
+        correct /= size
+        print(
+            f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n"
+        )
 
     def start(self):
         ...
